@@ -1,0 +1,86 @@
+ImageMerge is designed for merging multiple screen captures of an image that is too large to fit on the screen.
+It will not work for making panoramics using photographics.
+It can require the colors of every pixel match exactly or be close to the same color.  You can specify how close.
+It can be used to create full length screen captures of multi-screen web pages but there are better tools that will do that faster that are designed specifically for web pages.
+It is great for creating large images of paused game terrains where the terrain is too large to see on one screen for examle zoomed into a city created by SimCity or an entire map for Age of Empires.
+
+ImageMerge is a command-line utility written for Windows in C#.
+
+Syntax: imagemerge [size] [start location] [canvas color] [accuracy] [shortcut] [nearness] [overlap%]
+Size:
+  canvasSizeX - Width of canvas
+  canvasSizeY - Height of canvas
+Start location:
+  canvasStartX - Starting column (left) of first image
+  canvasStartY - Starting row (top) of first image
+canvas color - Color of canvas (none, white, black, red, blue, green, yellow, etc) or hex color like #FF0000, #123456, #ABCDEF, or #DDDDDD
+accuracy - How accurate should it try to match pixels?  1 is most accurate.  10 will run faster. 100 even faster.
+shortcut - 0 = Compare current to entire canvas 1 = Compare current to last image added to canvas
+nearness - 0 = pixels compared must match exactly.  1 = pixel compare finds closest match.  Ignores pixels that match canvas color because it can throw off the compare.  Ignores any placement where count of compared pixels is less than 100. Can decrease or increase this using the optional overlap parameter.
+overlap% - 0 = Not used. used when nearness=1.  Default is 20 as in 20% overlap which means each screen capture must overlap the compared pixels by 20%.  Use to change minimum percentage of required pixel overlap count.  If overlap count falls below the percentage threshold for a position, then that position is ignored.  Overlaps that have small overlap-counts can cause bad overlaps.  Make sure you overlap each screen shot to meet the threshold you set or the default 20%.
+
+Example:
+
+imagemerge 5000 4000 2500 2000 red 20 1 1 50
+
+Size of canvas (size of rendered image) is 5000 width and 4000 height.
+Starting left top (in that order) location of first screen capture will be 2500 left and 2000 top.
+Background color will be red.  TODO: Define all other color names and describe how to specify colors in hex.  Does it work?
+Accuracy will be 20.  That means it will check every 20th pixel.  Experiment to find the smallest accuracy that works.  Accuracy is tade-off between speed and accuracy.  The most accurate setting of 1 might take 20 hours to render while 100 might take 1 minute.  100 may also give you false positives since it has less data points to find the right overlap.  You might want to start with low accuracy just to get some quick results then increase the accuracy as you tweak the settings with multiple renders.
+Shortcut 1 requires each screen capture overlap the previous screen capture.  This will speed up the render.  0 allows the screen captures to overlap in any order.  This will take longer to render but you need to use it your screen shots don't overlap in order.
+Nearness 1 it will looks for closest match for colors.  Requires shortcut = 1.  Recommend each screen shot overlap previous by at least 50%.  80% or 90% will get even better results.  20% or less could result in bad overlaps.
+Overlap 50 will ignore any overlap that compares less than 50% of the pixels of the screen shot for the position being tried.  Used for nearness=1 only.  Prevents false positives caused by a small number of pixel overlaps.
+
+
+You might want to keep the command in a batch (merge.bat) or command file (merge.cmd) to save you some typing if you plan on running it many times.
+
+I recommend saving your screen captures in a non-lossy format like BMP or PNG.  JPG is lossy.  GIF only supports 256 colors.
+
+Trim off anything in your screen capture that is not part of the image you are trying to render for example game user interface.
+
+Copy your screen captures to a folder where there are no other images.
+
+Add ImageMerge.exe to your path or copy it to the same folder as your images.
+
+Create an output folder.  This is where the render images will go.  It will output an image for each screen capture.  If there is a problem, you can see where it goes wrong, correct and re-run.
+
+Copy Magick.NET-x64.dll to the same folder as ImageMerge.exe.
+
+It is important that your canvas size be big enough so the final image fits.  If the canvas is too small then screen capture will either not be merged or merge in the wrong place if there is any overlap.
+
+To reduce the time to render, make sure the next screen capture overlaps what has already been rendered. If you first screen captures are 4 disconnected corners then it will waste time trying to connect things that cannot be connected yet.
+
+Name your screen captures in the order you want them to be rendered for example if you have 20 screen captures, name them 01.png 02.png 03.png etc.
+
+If you have some screen captures with large areas of solid colors or repetitive patterns, it may find a higher overlap in the wrong place.
+
+One technique is to make the first screen capture the part of the screen that is most unique then do overlapping screen captures around that.
+
+Use parameters canvasStarX and convasStartY to position where the first screen capture will go on the canvas.
+
+If your canvas is 5000 x 5000 and your first screen capture is the bottom right and 500x500 then the start location should be about 4000 4000.
+
+It's OK to make your canvas too large.  You can always crop it once it renders.  You can speed up the render by using a tighter canvas but it can fail if your screen capture goes outside the canvas.
+
+If your canvas is much larger than you need, it can sometimes find better overlaps where it doesn't belong.  If that happens, simply reduce your canvas size and/or starting location so the false positives don't fit.
+
+
+
+Tips & Trouble Shooting
+
+Make sure your canvas is large enough to hold merged images stitched together.
+Make sure your screen captures overlap enough.  More overlap is slower to render but more accurate.  This is especially true if you set nearness=1 which requires at least 20% overlap by default. You can decrease or increase that overlap threshold with the overlap parameter between 1% and 99%.
+Make sure your render is not going outside your canvas. You may need to shift the starting location or increase the size of your canvas.
+Make sure none of your screen captures has part of the outer user interface in it.  If it does, crop it out so you only have the game without the user interface on the edges.
+If you used Shortcut 1, make sure each screen capture overlaps the previous one, except for the first one of course.
+Check the history of the render in the output folder to see where it went wrong.
+- was the canvas large enough?
+- was the accuracy set high enough? Lower numbers are more accurate for example 5 means look at every 5th pixel when searching for overlap so 20 would be less accurate.
+Did you miss a spot when you screen captured?
+If the program is getting confused by large areas of repetitive patterns, then ...
+- try different accuracy values. Try odd and prime numbers so that the comparison will not match the pattern
+- try adding some unique features to those large repetitive areas so they're not ambiguous. You'll need to clean it up manually after it renders.
+- try rendering parts of the maps separately then combining them manually
+If the program keeps getting confused, try screen capturing starting from the most unique area then creating overlapping screen captures around that.
+If you're using shortCut 0, try shortCut 1 and create your screen captures so each one overlaps the last one.  This reduces the places where a false positive overlap can happen.
+If you had a failure halfway through 50 output files, it might be quicker to start with the last good output as the first input and add that missing screen capture.  Just make sure if your screen captures include the edge of the map, to set the background color to same color.  Find the hex code for the color and use that.
